@@ -90,7 +90,7 @@ class Distro(distros.Distro):
                 searchservers.extend(info['dns-search'])
         if nameservers or searchservers:
             rhel_util.update_resolve_conf_file(self.resolve_conf_fn,
-                                               nameservers, searchservers)
+                                               nameservers, searchservers, None)
         return dev_names
 
     def apply_locale(self, locale, out_fn=None):

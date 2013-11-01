@@ -69,6 +69,7 @@ class Distro(distros.Distro):
         # Make the intermediate format as the rhel format...
         nameservers = []
         searchservers = []
+        local_domain = None
         dev_names = entries.keys()
         for (dev, info) in entries.iteritems():
             net_fn = self.network_script_tpl % (dev)
@@ -87,9 +88,11 @@ class Distro(distros.Distro):
                 nameservers.extend(info['dns-nameservers'])
             if 'dns-search' in info:
                 searchservers.extend(info['dns-search'])
-        if nameservers or searchservers:
+            if 'dns-domain' in info:
+                local_domain = info['dns-domain']
+        if nameservers or searchservers or local_domain:
             rhel_util.update_resolve_conf_file(self.resolve_conf_fn,
-                                               nameservers, searchservers)
+                                               nameservers, searchservers, local_domain)
         if dev_names:
             net_cfg = {
                 'NETWORKING': _make_sysconfig_bool(True),

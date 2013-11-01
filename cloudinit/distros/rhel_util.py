@@ -95,6 +95,9 @@ def translate_network(settings):
         # Name server search info provided??
         if 'dns-search' in info:
             iface_info['dns-search'] = info['dns-search'].split()
+        # Local Domain provided ??
+        if 'dns-domain' in info:
+            iface_info['dns-domain'] = info['dns-domain']
         # Is any mac address spoofing going on??
         if 'hwaddress' in info:
             hw_info = info['hwaddress'].lower().strip()
@@ -153,7 +156,7 @@ def read_sysconfig_file(fn):
 
 
 # Helper function to update RHEL/SUSE /etc/resolv.conf
-def update_resolve_conf_file(fn, dns_servers, search_servers):
+def update_resolve_conf_file(fn, dns_servers, search_servers, local_domain):
     try:
         r_conf = ResolvConf(util.load_file(fn))
         r_conf.parse()
@@ -174,4 +177,6 @@ def update_resolve_conf_file(fn, dns_servers, search_servers):
                 r_conf.add_search_domain(s)
             except ValueError:
                 util.logexc(LOG, "Failed at adding search domain %s", s)
+    if local_domain is not None:
+            r_conf.local_domain = local_domain
     util.write_file(fn, str(r_conf), 0644)
