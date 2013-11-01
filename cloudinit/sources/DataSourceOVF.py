@@ -25,6 +25,7 @@ from xml.dom import minidom
 import base64
 import os
 import re
+from xml.dom.minidom import parseString
 
 from cloudinit import log as logging
 from cloudinit import sources
@@ -100,6 +101,12 @@ class DataSourceOVF(sources.DataSource):
         # Now that we have exhausted any other places merge in the defaults
         md = util.mergemanydict([md, defaults])
 
+        # Update the network-interfaces if metadata had 'network-interfaces'
+        #
+        if 'network-interfaces' in md:
+            LOG.debug("Updating network interfaces from %s", self)
+            self.distro.apply_network(md['network-interfaces'])
+
         self.seed = ",".join(found)
         self.metadata = md
         self.userdata_raw = ud
@@ -128,17 +135,92 @@ class DataSourceOVFNet(DataSourceOVF):
         self.seed_dir = os.path.join(paths.seed_dir, 'ovf-net')
         self.supported_seed_starts = ("http://", "https://", "ftp://")
 
+def findXmlSection(dom, sectionName):
+   sections = dom.getElementsByTagName(sectionName)
+   return sections[0]
+
+def getPropertyMap(ovfEnv):
+   dom = parseString(ovfEnv)
+   section = findXmlSection(dom, "PropertySection")
+   propertyMap = {}
+   for property in section.getElementsByTagName("Property"):
+      key   = property.getAttribute("oe:key")
+      value = property.getAttribute("oe:value")
+      propertyMap[key] = value
+   dom.unlink()
+   return propertyMap
+
+def getEntityId(ovfEnv):
+	dom = parseString(ovfEnv)
+	section = dom.getElementsByTagName("Environment")[0]
+	return section.getAttribute("oe:id")
+
+def getOvfNetworkProp(settings, interface, property, id):
+	if id:
+		return settings.get('network.{0}.{1}.{2}'.format(interface, property, id), None)	
+	else:
+		return settings.get('network.{0}.{1}'.format(interface, property), None)
+
+def get_network_settings(settings, interface, id):
+	interface_cfg = 'iface {0} inet static'.format(interface)
+
+	address = getOvfNetworkProp(settings, interface, 'address', id)
+	network = getOvfNetworkProp(settings, interface, 'network', id)
+	netmask = getOvfNetworkProp(settings, interface, 'netmask', id)
+	broadcast = getOvfNetworkProp(settings, interface, 'broadcast', id) 
+	gateway = getOvfNetworkProp(settings, interface, 'gateway', id)
+	dns_nameservers = getOvfNetworkProp(settings, interface, 'dns-nameservers', id)
+	dns_search = getOvfNetworkProp(settings, interface, 'dns-search', id)
+	dns_domain = getOvfNetworkProp(settings, interface, 'dns-domain', id)
+	auto = getOvfNetworkProp(settings, interface, 'auto', id)
+
+	if address is not None:
+		interface_cfg+='\naddress {0}'.format(address)
+	if network is not None:
+		interface_cfg+='\nnetwork {0}'.format(network)
+	if netmask is not None:
+		interface_cfg+='\nnetmask {0}'.format(netmask)
+	if broadcast is not None:
+		interface_cfg+='\nbroadcast {0}'.format(broadcast)
+	if gateway is not None:
+		interface_cfg+='\ngateway {0}'.format(gateway)
+	if dns_nameservers is not None:
+		interface_cfg+='\ndns-nameservers {0}'.format(dns_nameservers)
+	if dns_search is not None:
+		interface_cfg+='\ndns-search {0}'.format(dns_search)
+	if dns_domain is not None:
+		interface_cfg+='\ndns-domain {0}'.format(dns_domain)
+	if auto is not None:
+		interface_cfg+='\nauto {0}'.format(auto)
+
+	# Adding final newline, to seperate multiple interfaces
+	interface_cfg+='\n'
+
+	return interface_cfg
 
 # This will return a dict with some content
 #  meta-data, user-data, some config
 def read_ovf_environment(contents):
     props = get_properties(contents)
+    propertyMap = getPropertyMap(contents)
+    id = getEntityId(contents)
+
     md = {}
     cfg = {}
     ud = ""
     cfg_props = ['password']
     md_props = ['seedfrom', 'local-hostname', 'public-keys', 'instance-id']
+
     for (prop, val) in props.iteritems():
+        qualified_prop = prop
+		
+	# In a vApp environment, some props may be qualified by their
+	# entitiy name.  We should strip this off i.e.
+	# hostname.server1, password.server1, hostname.server 2 etc
+	#
+        if id:
+            prop = prop.split('.')[0]
+
         if prop == 'hostname':
             prop = "local-hostname"
         if prop in md_props:
@@ -150,6 +232,16 @@ def read_ovf_environment(contents):
                 ud = base64.decodestring(val)
             except:
                 ud = val
+	elif "network.interface" in qualified_prop:
+	    interface = get_network_settings(propertyMap, val, id)
+	    network_interfaces = md.get('network-interfaces', None)
+	    if network_interfaces is not None:
+		network_interfaces += interface
+	    else:
+		network_interfaces = interface
+
+	    md['network-interfaces'] = network_interfaces 
+			
     return (md, ud, cfg)
 
 
