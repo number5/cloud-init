@@ -21,6 +21,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import cloudinit.util as util
+import subprocess
 import re
 
 from prettytable import PrettyTable
@@ -186,6 +187,21 @@ def route_pformat():
         lines.extend([header, route_s])
     return "\n".join(lines)
 
+
+_SECTIONS_RE = re.compile(r"\n(?=\w)")
+_IFCONFIG_RE = re.compile(r"^(?P<name>\w+).*?(?:HWaddr|ether) (?P<mac>[a-f0-9:]+)", re.DOTALL)
+
+def _parse_ifconfig_output(stdout):
+    result = {}
+    for section in _SECTIONS_RE.split(stdout):
+        match = _IFCONFIG_RE.match(section)
+        if match:
+            result[match.group("name")] = match.group("mac")
+    return result
+
+def find_mac_addresses():
+    output = subprocess.check_output(["ifconfig", "-a"])
+    return _parse_ifconfig_output(output)
 
 def debug_info(prefix='ci-info: '):
     lines = []
