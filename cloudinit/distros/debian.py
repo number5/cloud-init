@@ -28,7 +28,7 @@ from cloudinit import log as logging
 from cloudinit import util
 
 from cloudinit.distros.parsers.hostname import HostnameConf
-
+from cloudinit.distros.net_util import NetConfHelper
 from cloudinit.settings import PER_INSTANCE
 
 LOG = logging.getLogger(__name__)
@@ -71,6 +71,71 @@ class Distro(distros.Distro):
     def install_packages(self, pkglist):
         self.update_package_sources()
         self.package_command('install', pkgs=pkglist)
+
+    def _debian_network_json(self, settings):
+        nc = NetConfHelper(settings)
+        lines = []
+
+        lines.append("# Created by cloud-init on instance boot.")
+        lines.append("#")
+        lines.append("# This file describes the network interfaces available on your system")
+        lines.append("# and how to activate them. For more information, see interfaces(5).")
+        lines.append("")
+        lines.append("# The loopback network interface")
+        lines.append("auto lo")
+        lines.append("iface lo inet loopback")
+        lines.append("")
+
+        bonds = nc.get_links_by_type('bond')
+        for bond in bonds:
+            chunk = []
+            chunk.append("auto {0}".format(bond['id']))
+            chunk.append("iface {0} inet manual".format(bond['id']))
+            chunk.append('  bond-mode {0}'.format(bond['bond_mode']))
+            slaves = [nc.get_link_devname(nc.get_link_by_name(x)) for x in bond['bond_links']]
+            chunk.append('  bond-slaves {0}'.format(' '.join(slaves)))
+            chunk.append("")
+            lines.extend(chunk)
+
+        networks = nc.get_networks()
+        for net in networks:
+            # only have support for ipv4 so far.
+            if net['type'] != "ipv4":
+                continue
+
+            link = nc.get_link_by_name(net['link'])
+            devname = nc.get_link_devname(link)
+            chunk = []
+            chunk.append("# network: {0}".format(net['id']))
+            chunk.append("# neutron_network_id: {0}".format(net['neutron_network_id']))
+            chunk.append("auto {0}".format(devname))
+            chunk.append("iface {0} inet static".format(devname))
+            if link['type'] == "vlan":
+                chunk.append("  vlan_raw_device {0}".format(devname[:devname.rfind('.')]))
+                chunk.append("  hwaddress ether {0}".format(link['ethernet_mac_address']))
+            chunk.append("  address {0}".format(net['ip_address']))
+            chunk.append("  netmask {0}".format(net['netmask']))
+            gwroute = [route for route in net['routes'] if route['network'] == '0.0.0.0']
+            # TODO: hmmm
+            if len(gwroute) == 1:
+                chunk.append("  gateway {0}".format(gwroute[0]['gateway']))
+
+            for route in net['routes']:
+                if route['network'] == '0.0.0.0':
+                    continue
+                chunk.append("  post-up route add -net {0} netmask {1} gw {2} || true".format(route['network'],
+                    route['netmask'], route['gateway']))
+                chunk.append("  pre-down route del -net {0} netmask {1} gw {2} || true".format(route['network'],
+                    route['netmask'], route['gateway']))
+            chunk.append("")
+            lines.extend(chunk)
+        return {'/etc/network/interfaces': "\n".join(lines)}
+
+    def _write_network_json(self, settings):
+        files = self._rhel_network_json(settings)
+        for (fn, data) in files.iteritems():
+            util.write_file(fn, data)
+        return ['all']
 
     def _write_network(self, settings):
         util.write_file(self.network_conf_fn, settings)

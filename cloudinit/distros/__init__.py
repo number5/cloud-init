@@ -72,6 +72,12 @@ class Distro(object):
         # to write this blob out in a distro format
         raise NotImplementedError()
 
+    #@abc.abstractmethod
+    def _write_network_json(self, settings):
+        # In the future use the http://fedorahosted.org/netcf/
+        # to write this blob out in a distro format
+        raise NotImplementedError()
+
     def _find_tz_file(self, tz):
         tz_file = os.path.join(self.tz_zone_dir, str(tz))
         if not os.path.isfile(tz_file):
@@ -114,6 +120,12 @@ class Distro(object):
         arch_info = self._get_arch_package_mirror_info(arch)
         return _get_package_mirror_info(availability_zone=availability_zone,
                                         mirror_info=arch_info)
+
+    def apply_network_json(self, settings, bring_up=True):
+        dev_names = self._write_network_from_json(settings)
+        if bring_up:
+            return self._bring_up_interfaces(dev_names)
+        return False
 
     def apply_network(self, settings, bring_up=True):
         # Write it out

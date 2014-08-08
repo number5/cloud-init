@@ -191,10 +191,22 @@ def on_first_boot(data, distro=None):
     if not isinstance(data, dict):
         raise TypeError("Config-drive data expected to be a dict; not %s"
                         % (type(data)))
+
+    networkapplied = False
+    jsonnet_conf = data.get('vendordata_raw', {}).get('network')
+    if jsonnet_conf:
+        try:
+            distro_user_config = distro.apply_network_json(jsonnet_conf)
+            networkapplied = True
+        except NotImplementedError:
+            LOG.debug("Distro does not implement networking setup via Vendor JSON.")
+            pass
+
     net_conf = data.get("network_config", '')
-    if net_conf and distro:
+    if networkapplied is False and net_conf and distro:
         LOG.debug("Updating network interfaces from config drive")
         distro.apply_network(net_conf)
+
     files = data.get('files', {})
     if files:
         LOG.debug("Writing %s injected files", len(files))

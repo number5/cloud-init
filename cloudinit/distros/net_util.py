@@ -21,6 +21,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from cloudinit.netinfo import find_mac_addresses
+
 # This is a util function to translate debian based distro interface blobs as
 # given in /etc/network/interfaces to an *somewhat* agnostic format for
 # distributions that use other formats.
@@ -161,3 +163,32 @@ def translate_network(settings):
             if dev_name in real_ifaces:
                 real_ifaces[dev_name]['auto'] = True
     return real_ifaces
+
+class NetConfHelper(object):
+    def __init__(self, settings):
+        self._settings = settings
+
+    def get_link_by_name(self, name):
+        return [x for x in self._settings['links'] if x['id'] == name][0]
+
+    def get_links_by_type(self, t):
+        return [x for x in self._settings['links'] if x['type'] == t]
+
+    def get_link_devname(self, link):
+        # TODO: chase vlans/bonds/etc
+        if link['type'] == "vlan":
+            return "{0}.{1}".format(
+                self.get_link_devname(
+                    self.get_link_by_name(link['vlan_link'])),
+                link['vlan_id'])
+        if link['type'] == "ethernet":
+            devs = find_mac_addresses()
+            for (dev, mac) in devs.iteritems():
+                if mac == link['ethernet_mac_address']:
+                    return dev
+            raise Exception("Device not found: {0}".format(link))
+
+        return link['id']
+
+    def get_networks(self):
+        return self._settings['networks']
