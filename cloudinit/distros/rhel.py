@@ -62,6 +62,109 @@ class Distro(distros.Distro):
     def install_packages(self, pkglist):
         self.package_command('install', pkgs=pkglist)
 
+    def _rhel_network_json(self, settings):
+        # depends add redhat-lsb-core
+        nc = NetConfHelper(settings)
+        iffn = '/etc/sysconfig/network-scripts/ifcfg-{0}'
+        routefn = '/etc/sysconfig/network-scripts/route-{0}'
+        files = {}
+
+        bonds = nc.get_links_by_type('bond')
+        for bond in bonds:
+            chunk = []
+            fn = iffn.format(bond['id'])
+            lines = []
+            lines.append("# Created by cloud-init on instance boot.")
+            lines.append("#")
+            lines.append("")
+            lines.append("DEVICE={0}".format(bond['id']))
+            lines.append("ONBOOT=yes")
+            lines.append("BOOTPROTO=none")
+            lines.append("USERCTL=no")
+            lines.append("NM_CONTROLLED=no")
+            lines.append("TYPE=Ethernet")
+            lines.append("BONDING_OPTS=\"mode={0}\"".format(bond['bond_mode']))
+            files[fn] = "\n".join(lines)
+
+            for slave in bond['bond_links']:
+                slavelink = nc.get_link_by_name(slave)
+                slavedev = nc.get_link_devname(slavelink)
+                fn = iffn.format(slavedev)
+                lines = []
+                lines.append("# Created by cloud-init on instance boot.")
+                lines.append("#")
+                lines.append("")
+                lines.append("DEVICE={0}".format(slavedev))
+                lines.append("ONBOOT=yes")
+                lines.append("BOOTPROTO=none")
+                lines.append("USERCTL=no")
+                lines.append("NM_CONTROLLED=no")
+                lines.append("TYPE=Ethernet")
+                lines.append("MASTER={0}".format(bond['id']))
+                lines.append("SLAVE=yes")
+                files[fn] = "\n".join(lines)
+
+        networks = nc.get_networks()
+        for net in networks:
+            # only have support for ipv4 so far.
+            if net['type'] != "ipv4":
+                continue
+
+            link = nc.get_link_by_name(net['link'])
+            devname = nc.get_link_devname(link)
+            fn = iffn.format(devname)
+
+            lines = []
+            lines.append("# Created by cloud-init on instance boot.")
+            lines.append("#")
+            lines.append("# network: {0}".format(net['id']))
+            lines.append("# neutron_network_id: {0}".format(net['neutron_network_id']))
+            lines.append("")
+            lines.append("DEVICE={0}".format(devname))
+            if link['type'] == "vlan":
+                lines.append("VLAN=yes")
+                lines.append("PHYSDEV={0}".format(devname[:devname.rfind('.')]))
+                lines.append("HWADDR={0}".format(link['ethernet_mac_address']))
+
+            lines.append("ONBOOT=yes")
+            lines.append("BOOTPROTO=static")
+            lines.append("USERCTL=no")
+            lines.append("NM_CONTROLLED=no")
+            lines.append("TYPE=Ethernet")
+            lines.append("IPADDR={0}".format(net['ip_address']))
+            lines.append("NETMASK={0}".format(net['netmask']))
+
+            gwroute = [route for route in net['routes'] if route['network'] == '0.0.0.0']
+            # TODO: hmmm
+            if len(gwroute) == 1:
+                lines.append("GATEWAY={0}".format(gwroute[0]['gateway']))
+
+            files[fn] = "\n".join(lines)
+
+            i = 0
+            fn = routefn.format(devname)
+            lines = []
+            for route in net['routes']:
+                if route['network'] == '0.0.0.0':
+                    continue
+                lines.append("ADDRESS{0}={1}".format(i, route['network']))
+                lines.append("NETMASK{0}={1}".format(i, route['netmask']))
+                lines.append("GATEWAY{0}={1}".format(i, route['gateway']))
+                i += 1
+
+            if len(lines) > 0:
+                lines.insert(0, "#")
+                lines.insert(0, "# Created by cloud-init on instance boot.")
+                files[fn] = "\n".join(lines)
+
+        return files
+
+    def _write_network_json(self, settings):
+        files = self._rhel_network_json(settings)
+        for (fn, data) in files.iteritems():
+            util.write_file(fn, data)
+        return ['all']
+
     def _write_network(self, settings):
         # TODO(harlowja) fix this... since this is the ubuntu format
         entries = net_util.translate_network(settings)

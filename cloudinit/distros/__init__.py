@@ -72,7 +72,7 @@ class Distro(object):
         # to write this blob out in a distro format
         raise NotImplementedError()
 
-    @abc.abstractmethod
+    #@abc.abstractmethod
     def _write_network_json(self, settings):
         # In the future use the http://fedorahosted.org/netcf/
         # to write this blob out in a distro format
