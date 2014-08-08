@@ -124,7 +124,7 @@ class Distro(distros.Distro):
             if link['type'] == "vlan":
                 lines.append("VLAN=yes")
                 lines.append("PHYSDEV={0}".format(devname[:devname.rfind('.')]))
-                lines.append("HWADDR={0}".format(link['ethernet_mac_address']))
+                lines.append("MACADDR={0}".format(link['ethernet_mac_address']))
 
             lines.append("ONBOOT=yes")
             lines.append("BOOTPROTO=static")
