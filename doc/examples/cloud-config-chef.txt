@@ -1,6 +1,6 @@
 #cloud-config
 #
-# This is an example file to automatically install chef-client and run a 
+# This is an example file to automatically install chef-client and run a
 # list of recipes when the instance boots for the first time.
 # Make sure that this file is valid yaml before starting instances.
 # It should be passed as user-data when starting the instance.
@@ -8,7 +8,7 @@
 # This example assumes the instance is 12.04 (precise)
 
 
-# The default is to install from packages. 
+# The default is to install from packages.
 
 # Key from http://apt.opscode.com/packages@opscode.com.gpg.key
 apt_sources:
@@ -16,7 +16,7 @@ apt_sources:
    key: |
      -----BEGIN PGP PUBLIC KEY BLOCK-----
      Version: GnuPG v1.4.9 (GNU/Linux)
-     
+
      mQGiBEppC7QRBADfsOkZU6KZK+YmKw4wev5mjKJEkVGlus+NxW8wItX5sGa6kdUu
      twAyj7Yr92rF+ICFEP3gGU6+lGo0Nve7KxkN/1W7/m3G4zuk+ccIKmjp8KS3qn99
      dxy64vcji9jIllVa+XXOGIp0G8GEaj7mbkixL/bMeGfdMlv8Gf2XPpp9vwCgn/GC
@@ -54,6 +54,10 @@ chef:
  #          appears already installed.
  force_install: false
 
+ # Boolean: daemonize the `chef-client` process
+ #          defaults to `true`
+ daemonize: false
+
  # Chef settings
  server_url: "https://chef.yourorg.com:4000"
 
@@ -71,7 +75,7 @@ chef:
      -----BEGIN RSA PRIVATE KEY-----
      YOUR-ORGS-VALIDATION-KEY-HERE
      -----END RSA PRIVATE KEY-----
- 
+
  # A run list for a first boot json
  run_list:
   - "recipe[apache2]"

@@ -98,10 +98,18 @@ def handle(name, cfg, cloud, log, _args):
             ruby_version = util.get_cfg_option_str(chef_cfg, 'ruby_version',
                                                    RUBY_VERSION_DEFAULT)
             install_chef_from_gems(cloud.distro, ruby_version, chef_version)
-            # and finally, run chef-client
-            log.debug('Running chef-client')
-            util.subp(['/usr/bin/chef-client',
-                       '-d', '-i', '1800', '-s', '20'], capture=False)
+
+            # determine whether to daemonize
+            daemon = util.get_cfg_option_bool(chef_cfg,
+                'daemonize', default=False)):
+
+            if daemon
+                # and finally, run chef-client
+                log.debug('Running chef-client')
+
+                util.subp(['/usr/bin/chef-client',
+                        '-d', '-i', '1800', '-s', '20'], capture=False)
+
         elif install_type == 'packages':
             # this will install and run the chef-client from packages
             cloud.distro.install_packages(('chef',))
