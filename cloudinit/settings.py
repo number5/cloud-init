@@ -34,6 +34,7 @@ CFG_BUILTIN = {
         'AltCloud',
         'OVF',
         'MAAS',
+        'ExtraConfig',
         'Ec2',
         'CloudStack',
         # At the end to act as a 'catch' when none of the above work...
