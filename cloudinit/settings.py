@@ -37,6 +37,7 @@ CFG_BUILTIN = {
         'ExtraConfig',
         'Ec2',
         'CloudStack',
+        'SoftLayer',
         # At the end to act as a 'catch' when none of the above work...
         'None',
     ],
