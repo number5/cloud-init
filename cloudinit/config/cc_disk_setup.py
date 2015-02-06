@@ -303,8 +303,8 @@ def is_disk_used(device):
 
     # If the child count is higher 1, then there are child nodes
     # such as partition or device mapper nodes
-    use_count = [x for x in enumerate_disk(device)]
-    if len(use_count.splitlines()) > 1:
+    use_count = enumerate_disk(device)
+    if len(use_count) > 1:
         return True
 
     # If we see a file system, then its used
