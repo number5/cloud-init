@@ -1,8 +1,8 @@
 .. _yaml_examples:
 
-=========
+=====================
 Cloud config examples
-=========
+=====================
 
 Including users and groups
 ---------------------------
@@ -80,7 +80,7 @@ Run commands on first boot
 
 
 Alter the completion message
----------------------------
+----------------------------
 
 .. literalinclude:: ../../examples/cloud-config-final-message.txt
    :language: yaml
@@ -100,6 +100,13 @@ Run apt or yum upgrade
    :language: yaml
    :linenos:
 
+Update apt database on first boot
+---------------------------------
+
+.. literalinclude:: ../../examples/cloud-config-update-apt.txt
+   :language: yaml
+   :linenos:
+
 Adjust mount points mounted
 ---------------------------
 
@@ -115,19 +122,40 @@ Call a url when finished
    :linenos:
 
 Reboot/poweroff when finished
----------------------------
+-----------------------------
 
 .. literalinclude:: ../../examples/cloud-config-power-state.txt
    :language: yaml
    :linenos:
 
 Configure instances ssh-keys
----------------------------
+----------------------------
 
 .. literalinclude:: ../../examples/cloud-config-ssh-keys.txt
    :language: yaml
    :linenos:
-   
+
+Configure data sources
+----------------------
+
+.. literalinclude:: ../../examples/cloud-config-datasources.txt
+   :language: yaml
+   :linenos:
+
+Create partitions and filesystems
+---------------------------------
+
+.. literalinclude:: ../../examples/cloud-config-disk-setup.txt
+   :language: yaml
+   :linenos:
+
+Grow partitions
+---------------
+
+.. literalinclude:: ../../examples/cloud-config-growpart.txt
+   :language: yaml
+   :linenos:
+
 
 .. _chef: http://www.opscode.com/chef/
 .. _puppet: http://puppetlabs.com/
