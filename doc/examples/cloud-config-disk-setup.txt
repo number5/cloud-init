@@ -97,12 +97,15 @@ disk_setup:
 #                device mapper targets.
 #
 #    table_type=<TYPE>: Currently the following are supported:
-#                    'mbr': default and setups a MS-DOS partition table
+#                    'mbr': Stands for "Master Boot Record". This is the 
+#                           default and setups a MS-DOS partition table.
+#                    'gpt': Stands for "GUID Partition Table". Part of 
+#                           the new UEFI standard.
 #
-#                Note: At this time only 'mbr' partition tables are allowed.
-#                    It is anticipated in the future that we'll have GPT as
-#                    option in the future, or even "RAID" to create a mdadm
-#                    RAID.
+#                Note: At this time only 'mbr' and 'gpt' partition tables
+#                    are allowed. It is anticipated in the future that 
+#                    we'll have "RAID" as option in the future to create 
+#                    a mdadm RAID.
 #
 #    layout={...}: The device layout. This is a list of values, with the
 #                percentage of disk that partition will take.
