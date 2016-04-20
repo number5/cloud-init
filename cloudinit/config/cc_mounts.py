@@ -288,7 +288,7 @@ def handle(_name, cfg, cloud, log, _args):
         start = str(cfgmnt[i][0])
         sanitized = sanitize_devname(start, cloud.device_name_to_device, log)
         if sanitized is None:
-            log.debug("Ignorming nonexistant named mount %s", start)
+            log.debug("Ignoring nonexistent named mount %s", start)
             continue
 
         if sanitized != start:
@@ -325,7 +325,7 @@ def handle(_name, cfg, cloud, log, _args):
         start = defmnt[0]
         sanitized = sanitize_devname(start, cloud.device_name_to_device, log)
         if sanitized is None:
-            log.debug("Ignoring nonexistant default named mount %s", start)
+            log.debug("Ignoring nonexistent default named mount %s", start)
             continue
         if sanitized != start:
             log.debug("changed default device %s => %s" % (start, sanitized))
@@ -348,7 +348,7 @@ def handle(_name, cfg, cloud, log, _args):
     actlist = []
     for x in cfgmnt:
         if x[1] is None:
-            log.debug("Skipping non-existent device named %s", x[0])
+            log.debug("Skipping nonexistent device named %s", x[0])
         else:
             actlist.append(x)
 
