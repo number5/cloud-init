@@ -25,7 +25,7 @@ from cloudinit import url_helper
 LOG = logging.getLogger(__name__)
 
 BUILTIN_DS_CONFIG = {
-    'metadata_url': 'http://metadata.google.internal./computeMetadata/v1/'
+    'metadata_url': 'http://metadata.google.internal/computeMetadata/v1/'
 }
 REQUIRED_FIELDS = ('instance-id', 'availability-zone', 'local-hostname')
 
