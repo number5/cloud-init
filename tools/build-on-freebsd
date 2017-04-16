@@ -12,7 +12,7 @@ pkgs="
    e2fsprogs
    gpart
    py27-Jinja2
-   py27-argparse
+   py27-args
    py27-boto
    py27-cheetah
    py27-configobj
