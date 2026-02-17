@@ -19,7 +19,7 @@ defaults:
 
 jobs:
   patch-conflicts-upstream:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     name: Check patches apply cleanly and unit tests pass
     steps:
 
