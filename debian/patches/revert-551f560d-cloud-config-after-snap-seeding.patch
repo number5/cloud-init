@@ -97,27 +97,6 @@ Last-Update: 2024-02-14
  Wants=network-online.target cloud-config.target
  ConditionPathExists=!/etc/cloud/cloud-init.disabled
  ConditionKernelCommandLine=!cloud-init=disabled
---- a/tests/integration_tests/modules/test_frequency_override.py
-+++ b/tests/integration_tests/modules/test_frequency_override.py
-@@ -19,18 +19,6 @@ def test_frequency_override(client: Inte
-         in client.read_from_file("/var/log/cloud-init.log")
-     )
-     assert client.read_from_file("/var/tmp/hi").strip().count("hi") == 1
--    # This workaround is not needed for OCI, so just skip it
--    if CURRENT_RELEASE.os == "ubuntu" and PLATFORM != "oci":
--        if CURRENT_RELEASE.series in ("focal", "jammy", "lunar", "mantic"):
--            # Stable series will block on snapd.seeded.service and create a
--            # semaphore file
--            assert client.execute("test -f /var/lib/cloud/snap-seeded.once").ok
--        else:
--            # Newer series will not block on snapd.seeded.service nor create a
--            # semaphore file
--            assert not client.execute(
--                "test -f /var/lib/cloud/snap-seeded.once"
--            ).ok
- 
-     # Change frequency of scripts_user to always
-     config = client.read_from_file("/etc/cloud/cloud.cfg")
 --- a/tests/unittests/config/test_cc_lxd.py
 +++ b/tests/unittests/config/test_cc_lxd.py
 @@ -11,9 +11,7 @@ from cloudinit.config.schema import (
@@ -200,7 +179,7 @@ Last-Update: 2024-02-14
          data = {
 --- a/tests/unittests/config/test_cc_snap.py
 +++ b/tests/unittests/config/test_cc_snap.py
-@@ -293,11 +293,8 @@ class TestSnapSchema:
+@@ -295,11 +295,8 @@ class TestSnapSchema:
  
  
  class TestHandle:
@@ -213,7 +192,7 @@ Last-Update: 2024-02-14
          """Any configured snap assertions are provided to add_assertions."""
          assert_file = os.path.join(
              fake_cloud.paths.get_ipath_cur(), "snapd.assertions"
-@@ -312,4 +309,3 @@ class TestHandle:
+@@ -314,4 +311,3 @@ class TestHandle:
          assert util.load_text_file(compare_file) == util.load_text_file(
              assert_file
          )
